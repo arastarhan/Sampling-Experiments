@@ -1,5 +1,9 @@
 '''
-Created on 2012.10.11
+@EMDC 2011 - 2013 
+
+Homework for ID2220	Advanced areas of distributed systems
+
+Estimation of the average node degree with MHRW and RWRW
 
 @authors: Vaidas Brundza & Aras Tarhan
 '''
@@ -8,12 +12,7 @@ import numpy
 import sys
 import networkx as netX
 
-# Input arguments: #noOfTests #noOfSamples & sampleSizes; Min/Max incomes predefined
-sample_sizes = []
-number_of_tests = int(sys.argv[1])
-for i in range(int(sys.argv[2])):
-    sample_sizes.append(int(sys.argv[i+3]))
-
+# Min/Max incomes predefined
 min_income = 1000
 max_income = 8000
 step_income = 100
@@ -54,18 +53,17 @@ def reWeightedRW(G, income, sampleSize):
     biased_average_incomes = numpy.average(node_incomes)
 
     # Correcting the random walk sampling with inverted-node-degree probability
-    normalization_constant = 0.0
+    summation_of_denominator = 0.0
     for x in node_degrees:
-        normalization_constant += (1.0 / x)
- 
-    for x in node_degrees:
-        temp = (1.0 / x) / normalization_constant
-        prob.append(temp)
+        summation_of_denominator += (1.0 / x)
 
-    #reweighted_average_degrees = sum(i*j for (i, j) in zip(prob,node_degrees))
-    reweighted_average_degrees = len(node_degrees)/normalization_constant
-    reweighted_average_incomes = sum(i*j for (i, j) in zip(prob,node_incomes))
-    
+	numerator=0.0
+	
+	for i in range(len(node_degrees)):
+		numerator += (node_incomes[i] * 1.0) / node_degrees[i]	
+	reweighted_average_degrees = len(node_degrees)/summation_of_denominator
+    reweighted_average_incomes = numerator/summation_of_denominator
+	
     return [biased_average_degrees, reweighted_average_degrees, biased_average_incomes, reweighted_average_incomes]
 
 # a function to perform Metropolis-Hasting Random Walk
@@ -92,7 +90,7 @@ def metropolisHastingsRW(G, incomes, sampleSize):
         else:
             rand = random.random()
             prob = float(len(G[node])) / len(G[neighbor])
-            if ((rand < prob)):
+            if (rand < prob):
                 node = neighbor
             else:
                 node = node
@@ -113,7 +111,7 @@ def metropolisHastingsRW(G, incomes, sampleSize):
 
 
 # a function for gathering and writing RWRW and MHRW results to file
-def resultPrint(G, income):
+def resultPrint(G, income, number_of_tests, sample_sizes):
     source = open('results.txt', 'w')
     real_avg_degree = 2.0 * G.number_of_edges()/G.number_of_nodes()
     real_avg_income = numpy.average(income.values())
@@ -181,13 +179,21 @@ def resultPrint(G, income):
         
         source.write('{0:0.0f}\t{1:2.7f}\t{2:2.7f}\t{3:2.7f}\t{4:2.7f}\t{5:2.7f}\t{6:2.7f}\t{7:2.7f}\t{8:2.7f}\t{9:2.7f}\t{10:2.7f}\t\n'.format(sample, mean_degree_wd, mean_degree_wod, std_degree_wd, std_degree_wod, real_avg_degree, mean_incomes_wd, mean_incomes_wod, std_incomes_wd, std_incomes_wod, real_avg_income))
 
-def main():
-    G = load_graph("p2p-Gnutella31.txt")
-    print("---> Generating income")
-    income = generateNodesIncome(G)
-    print("---> Printing results")
-    resultPrint(G, income)
-    print("---> Results have been published !")
+def main(argv):
+	# Input arguments: #noOfTests #noOfSamples & sampleSizes;
+	number_of_tests = int(sys.argv[1])
+	
+	sample_sizes=list()
+
+	for i in range(int(sys.argv[2])):
+		sample_sizes.append(int(sys.argv[i+3]))
+			
+	G = load_graph("p2p-Gnutella31.txt")
+	print("---> Generating income")
+	income = generateNodesIncome(G)
+	print("---> Printing results")
+	resultPrint(G, income, number_of_tests, sample_sizes)
+	print("---> Results have been published !")
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
