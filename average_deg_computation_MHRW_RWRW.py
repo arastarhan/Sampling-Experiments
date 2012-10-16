@@ -92,8 +92,7 @@ def metropolisHastingsRW(G, incomes, sampleSize):
         else:
             rand = random.random()
             prob = float(len(G[node])) / len(G[neighbor])
-            if ((rand < prob) | ((prob <= 0.20) & (rand <= 0.20))):
-            #if ((rand < prob)):
+            if ((rand < prob)):
                 node = neighbor
             else:
                 node = node
